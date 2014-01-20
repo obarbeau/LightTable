@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [send])
   (:require [cljs.reader :as reader]
             [lt.object :as object]
+            [lt.objs.files :as files]
             [lt.objs.clients :as clients]
             [lt.objs.sidebar.clients :as scl]
             [lt.objs.eval :as eval]
@@ -25,9 +26,7 @@
                        :editor.eval.cljs.result
                        {:result (eval/cljs-result-format (.call js/eval js/window code))
                         :meta (merge (:meta data) (:meta res))}])
-        (catch js/global.Error e
-          (object/raise clients/clients :message [cb :editor.eval.cljs.exception {:ex e :meta (:meta res)}]))
-        (catch js/Error e
+        (catch :default e
           (object/raise clients/clients :message [cb :editor.eval.cljs.exception {:ex e :meta (:meta res)}]))))))
 
 (defmethod on-message :editor.eval.js [_ data cb]
@@ -39,9 +38,7 @@
                        :editor.eval.js.result
                        {:result (.call js/eval js/window code)
                         :meta (:meta data)}])
-        (catch js/Error e
-          (object/raise clients/clients :message [cb :editor.eval.js.exception {:ex e :meta (:meta data)}]))
-        (catch js/global.Error e
+        (catch :default e
           (object/raise clients/clients :message [cb :editor.eval.js.exception {:ex e :meta (:meta data)}])))))
 
 (defmethod on-message :editor.eval.css [_ data cb]
@@ -66,6 +63,8 @@
 (defn init []
   (clients/handle-connection! {:name client-name
                                :tags [:client.local]
+                               :dir (files/lt-home)
+                               :root-relative (files/lt-home "core")
                                :commands #{:editor.eval.cljs.exec
                                            :editor.eval.js
                                            :editor.eval.css}
